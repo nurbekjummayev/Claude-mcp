@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 use Throwable;
 
+#[Name('get_article_content')]
 #[Description('Fetch the full article content from a remote URL. Returns plain text body (truncated to 50k chars).')]
 class GetArticleContentTool extends Tool
 {

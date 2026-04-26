@@ -25,18 +25,19 @@ class AiController
         $data = $request->validated();
         $prompt = $this->composePrompt((string) $data['prompt'], $data['context'] ?? null);
         $model = (string) ($data['model'] ?? config('ai.claude.default_model'));
+        $systemPrompt = (string) ($data['system'] ?? $this->defaultSystemPrompt());
 
         $task = AiTask::create([
             'prompt' => $prompt,
-            'system_prompt' => $data['system'] ?? null,
+            'system_prompt' => $systemPrompt,
             'model' => $model,
             'status' => AiTask::STATUS_PROCESSING,
         ]);
 
         try {
-            $result = $this->claude->ask(
+            $result = $this->claude->askWithMcp(
                 prompt: $prompt,
-                systemPrompt: $data['system'] ?? null,
+                systemPrompt: $systemPrompt,
                 maxTurns: isset($data['max_turns']) ? (int) $data['max_turns'] : null,
                 model: $model,
             );
@@ -328,5 +329,23 @@ PROMPT;
         }
 
         return "Additional context:\n{$context}\n\n---\n\n{$prompt}";
+    }
+
+    /**
+     * Default system prompt: positions Claude as a general-purpose assistant
+     * (not just a code assistant) and tells it the local MCP tools exist so
+     * it picks them up for things like weather, articles, Telegram, etc.
+     */
+    private function defaultSystemPrompt(): string
+    {
+        return <<<'PROMPT'
+You are a helpful general-purpose assistant accessible via API. Reply in the
+user's language. You have access to local MCP tools for things like weather
+lookups, fetching articles from a database, searching articles, fetching
+remote URLs, sending Telegram messages, and saving conversations. Use those
+tools whenever they help answer the user's question — do not refuse a
+question just because it asks for real-time data; check the tools first.
+Be concise.
+PROMPT;
     }
 }

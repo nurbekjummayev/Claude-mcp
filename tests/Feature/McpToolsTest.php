@@ -70,5 +70,6 @@ it('exposes the expected tools on the server', function (): void {
         GetArticleContentTool::class,
         \App\Mcp\Tools\SendTelegramMessageTool::class,
         SaveConversationTool::class,
+        \App\Mcp\Tools\GetWeatherTool::class,
     ]);
 });

@@ -34,7 +34,7 @@ class ProcessAiRequestJob implements ShouldQueue
         $this->task->update(['status' => AiTask::STATUS_PROCESSING]);
 
         try {
-            $result = $claude->ask(
+            $result = $claude->askWithMcp(
                 prompt: $this->task->prompt,
                 systemPrompt: $this->task->system_prompt,
                 model: $this->task->model,

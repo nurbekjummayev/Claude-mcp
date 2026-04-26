@@ -10,8 +10,10 @@ use Illuminate\Support\Carbon;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('get_articles')]
 #[Description('Get articles from the local database, optionally filtered by date or keyword.')]
 class GetArticlesTool extends Tool
 {

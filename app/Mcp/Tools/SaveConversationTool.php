@@ -9,8 +9,10 @@ use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('save_conversation')]
 #[Description("Save a turn of a user's conversation for future context.")]
 class SaveConversationTool extends Tool
 {

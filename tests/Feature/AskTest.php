@@ -10,7 +10,7 @@ it('returns synchronous claude response', function (): void {
     [$token, $plain] = ApiToken::issue('ask', [], 60);
 
     $mock = Mockery::mock(ClaudeCodeService::class);
-    $mock->shouldReceive('ask')
+    $mock->shouldReceive('askWithMcp')
         ->once()
         ->andReturn([
             'response' => 'Hello, world!',
@@ -47,7 +47,7 @@ it('records failure when claude throws', function (): void {
     [$token, $plain] = ApiToken::issue('ask-fail', [], 60);
 
     $mock = Mockery::mock(ClaudeCodeService::class);
-    $mock->shouldReceive('ask')->once()->andThrow(new RuntimeException('boom'));
+    $mock->shouldReceive('askWithMcp')->once()->andThrow(new RuntimeException('boom'));
 
     app()->instance(ClaudeCodeService::class, $mock);
 
@@ -73,7 +73,7 @@ it('prepends context to prompt when provided', function (): void {
     [$token, $plain] = ApiToken::issue('ask-ctx', [], 60);
 
     $mock = Mockery::mock(ClaudeCodeService::class);
-    $mock->shouldReceive('ask')
+    $mock->shouldReceive('askWithMcp')
         ->once()
         ->withArgs(function (string $prompt) {
             return str_contains($prompt, 'Additional context')

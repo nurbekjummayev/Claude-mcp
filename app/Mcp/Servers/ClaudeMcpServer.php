@@ -6,6 +6,7 @@ namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\GetArticleContentTool;
 use App\Mcp\Tools\GetArticlesTool;
+use App\Mcp\Tools\GetWeatherTool;
 use App\Mcp\Tools\SaveConversationTool;
 use App\Mcp\Tools\SearchArticlesTool;
 use App\Mcp\Tools\SendTelegramMessageTool;
@@ -25,6 +26,7 @@ class ClaudeMcpServer extends Server
         GetArticleContentTool::class,
         SendTelegramMessageTool::class,
         SaveConversationTool::class,
+        GetWeatherTool::class,
     ];
 
     protected array $resources = [

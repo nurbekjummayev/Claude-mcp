@@ -12,6 +12,16 @@ use Throwable;
 
 class ClaudeCodeService
 {
+    /** @var list<string> Tool names exposed by App\Mcp\Servers\ClaudeMcpServer (set via #[Name] on each Tool). */
+    private const MCP_TOOL_NAMES = [
+        'get_articles',
+        'search_articles',
+        'get_article_content',
+        'send_telegram_message',
+        'save_conversation',
+        'get_weather',
+    ];
+
     /**
      * @param  list<int>  $retryBackoffMs  Sleep durations between retry attempts.
      */
@@ -143,16 +153,30 @@ class ClaudeCodeService
             '--model', $model,
         ];
 
-        if ($systemPrompt !== null && $systemPrompt !== '') {
-            $cmd[] = '--system-prompt';
-            $cmd[] = $systemPrompt;
-        }
+        // Safe built-in tools always available. Bash/Edit/Write are
+        // intentionally NOT enabled — exposing them via the public API
+        // would let any caller execute arbitrary code on the server.
+        $allowedTools = ['WebSearch', 'WebFetch'];
 
         if ($mcpConfigPath !== null && $mcpConfigPath !== '') {
             $cmd[] = '--mcp-config';
             $cmd[] = $mcpConfigPath;
             // Only honor the explicit config; ignore project-level .mcp.json.
             $cmd[] = '--strict-mcp-config';
+
+            // Claude CLI namespaces MCP tools as mcp__<server>__<tool>.
+            // Listing them explicitly is more portable than wildcards.
+            foreach (self::MCP_TOOL_NAMES as $tool) {
+                $allowedTools[] = "mcp__laravel__{$tool}";
+            }
+        }
+
+        $cmd[] = '--allowed-tools';
+        $cmd[] = implode(' ', $allowedTools);
+
+        if ($systemPrompt !== null && $systemPrompt !== '') {
+            $cmd[] = '--system-prompt';
+            $cmd[] = $systemPrompt;
         }
 
         return $cmd;

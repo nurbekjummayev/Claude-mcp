@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('search_articles')]
 #[Description('Search articles by full-text query (Postgres) or substring (other DBs).')]
 class SearchArticlesTool extends Tool
 {
