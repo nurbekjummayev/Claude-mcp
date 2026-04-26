@@ -209,12 +209,41 @@ class AiController
         };
 
         return <<<PROMPT
-Translate the following article titles to {$lang} and write a 1-sentence summary for each.
+Translate each article title to {$lang} and write a 2-3 sentence summary for each.
 
-CRITICAL RULES:
-- DO NOT modify URLs in any way. Copy each URL EXACTLY as given, character-for-character.
-- DO NOT wrap URLs in markdown link syntax inside the "url" field — it must be a plain URL.
-- In "telegram_message", format URLs only once with markdown: [Title](URL). Do not nest.
+URL RULES (CRITICAL):
+- Copy each URL EXACTLY as given. Character-for-character. Do not modify, encode, or wrap.
+- The "url" field must contain a plain URL, NOT markdown link syntax.
+
+TELEGRAM MESSAGE FORMAT (CRITICAL — follow EXACTLY):
+
+The "telegram_message" must consist ONLY of numbered article blocks. One block per article,
+separated by a single blank line. Each block is exactly three lines:
+
+  <NUMBER_EMOJI> <Translated title>
+  <2-3 sentence summary in {$lang}>
+  [O'qish](<EXACT URL FROM INPUT>)
+
+Use these emoji numbers for the first 10 items, in order:
+1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟
+For items 11 and beyond use plain digits with a dot: 11. 12. 13. ...
+
+DO NOT add ANY of: a header line, section dividers ("Texnik:", "Kasbiy:"), author lists,
+publication lists, "n8n" footer, extra emojis, decorative separators. Only the numbered
+article blocks. Plain text — no bold, no italics, no quote blocks.
+
+Concrete example for 2 articles:
+
+1️⃣ PHP-da 50 million qator hujjatni serverga yuk bermay paginate qilish
+Bu maqolada katta hajmdagi ma'lumotlarni keyset paginatsiyasi orqali samarali sahifalash
+texnikalari ko'rib chiqilgan. Muallif memory va CPU yukini kamaytirish uchun aniq SQL
+patternlar va PHP kod misollarini taqdim etadi.
+[O'qish](https://medium.com/example/article-1)
+
+2️⃣ Laravel 13 yangi imkoniyatlari haqida
+Yangi versiyaning eng muhim xususiyatlari, performance yaxshilanishlari va breaking
+change'lar batafsil ko'rib chiqilgan. Migratsiya jarayoni uchun amaliy maslahatlar.
+[O'qish](https://medium.com/example/article-2)
 
 Return STRICT JSON in this exact shape, with no text outside the JSON:
 
@@ -222,10 +251,10 @@ Return STRICT JSON in this exact shape, with no text outside the JSON:
   "translated_articles": [
     {"title_uz": "...", "url": "<EXACT URL FROM INPUT>", "summary_uz": "..."}
   ],
-  "telegram_message": "<{$format} digest of all articles>"
+  "telegram_message": "<formatted digest exactly as described>"
 }
 
-Articles:
+Articles to translate:
 {$list}
 PROMPT;
     }
