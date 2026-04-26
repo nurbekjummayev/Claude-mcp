@@ -209,17 +209,20 @@ class AiController
 
         return <<<PROMPT
 Translate the following article titles to {$lang} and write a 1-sentence summary for each.
-Return STRICT JSON in this exact shape:
+
+CRITICAL RULES:
+- DO NOT modify URLs in any way. Copy each URL EXACTLY as given, character-for-character.
+- DO NOT wrap URLs in markdown link syntax inside the "url" field — it must be a plain URL.
+- In "telegram_message", format URLs only once with markdown: [Title](URL). Do not nest.
+
+Return STRICT JSON in this exact shape, with no text outside the JSON:
 
 {
   "translated_articles": [
-    {"title_uz": "...", "url": "...", "summary_uz": "..."}
+    {"title_uz": "...", "url": "<EXACT URL FROM INPUT>", "summary_uz": "..."}
   ],
-  "telegram_message": "..."
+  "telegram_message": "<{$format} digest of all articles>"
 }
-
-For "telegram_message", produce a {$format} formatted digest with all articles.
-Do not include any text outside the JSON.
 
 Articles:
 {$list}
@@ -239,9 +242,12 @@ PROMPT;
         $decoded = json_decode($clean, true);
 
         if (is_array($decoded) && isset($decoded['translated_articles'], $decoded['telegram_message'])) {
+            $articles = $this->normalizeTranslatedArticles((array) $decoded['translated_articles'], $originals);
+            $telegram = $this->fixUrlsInText((string) $decoded['telegram_message'], $originals);
+
             return [
-                'translated_articles' => (array) $decoded['translated_articles'],
-                'telegram_message' => (string) $decoded['telegram_message'],
+                'translated_articles' => $articles,
+                'telegram_message' => $telegram,
             ];
         }
 
@@ -254,6 +260,65 @@ PROMPT;
             ], $originals),
             'telegram_message' => $response,
         ];
+    }
+
+    /**
+     * Defensive: replace each translated article's URL with the corresponding
+     * original URL by index. Claude sometimes mangles URLs even when prompted
+     * not to (e.g. wraps them in markdown link syntax inside the field).
+     *
+     * @param  array<int, mixed>  $translated
+     * @param  array<int, array{title: string, url: string}>  $originals
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeTranslatedArticles(array $translated, array $originals): array
+    {
+        $result = [];
+
+        foreach ($translated as $i => $item) {
+            $entry = is_array($item) ? $item : [];
+            if (isset($originals[$i])) {
+                $entry['url'] = $originals[$i]['url'];
+            }
+            $result[] = $entry;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Replace any mangled URLs in the telegram_message string with their
+     * original counterparts, matched by domain+path prefix.
+     *
+     * @param  array<int, array{title: string, url: string}>  $originals
+     */
+    private function fixUrlsInText(string $text, array $originals): string
+    {
+        foreach ($originals as $a) {
+            $original = $a['url'];
+
+            // Common Claude mangling: wraps the host in a markdown link.
+            // e.g. https://example.com/1 → https://[example.com](http://example.com)/1
+            $host = (string) parse_url($original, PHP_URL_HOST);
+            if ($host === '') {
+                continue;
+            }
+
+            // Match the mangled pattern and replace with the original URL.
+            $mangled = '~https?://\['.preg_quote($host, '~').'\]\(https?://'.preg_quote($host, '~').'\)([^\s)\]]*)~i';
+            $text = (string) preg_replace_callback($mangled, function (array $m) use ($original, $host): string {
+                $path = (string) parse_url($original, PHP_URL_PATH);
+                $query = (string) parse_url($original, PHP_URL_QUERY);
+                $tail = $path.($query !== '' ? '?'.$query : '');
+
+                // Only swap if the mangled tail matches the original path tail.
+                return str_starts_with($m[1], $tail) || $m[1] === $tail
+                    ? $original.substr($m[1], strlen($tail))
+                    : $original;
+            }, $text);
+        }
+
+        return $text;
     }
 
     private function composePrompt(string $prompt, ?string $context): string
