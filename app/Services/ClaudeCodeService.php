@@ -49,9 +49,11 @@ class ClaudeCodeService
         $turns = $maxTurns ?? $this->maxTurns;
 
         $command = $this->buildCommand($prompt, $systemPrompt, $turns, $modelToUse, $mcpConfigPath);
-        $env = $this->apiKey !== null && $this->apiKey !== ''
-            ? ['ANTHROPIC_API_KEY' => $this->apiKey]
-            : [];
+        $env = $this->buildEnv();
+
+        // Run from a neutral directory so the project's `.mcp.json` (if any)
+        // doesn't trigger an interactive trust prompt that hangs `claude -p`.
+        $cwd = sys_get_temp_dir();
 
         $lastError = null;
 
@@ -59,7 +61,7 @@ class ClaudeCodeService
             $start = (int) (microtime(true) * 1000);
 
             try {
-                $process = new Process($command, env: $env);
+                $process = new Process($command, cwd: $cwd, env: $env);
                 $process->setTimeout((float) $this->timeout);
                 $process->run();
 
@@ -96,6 +98,31 @@ class ClaudeCodeService
             0,
             $lastError,
         );
+    }
+
+    /**
+     * Build the env passed to the Claude CLI subprocess. Claude CLI reads
+     * subscription auth from `$HOME/.claude/`, so HOME must point to a real
+     * directory readable by the user running the request (php-fpm: www-data).
+     *
+     * @return array<string, string>
+     */
+    private function buildEnv(): array
+    {
+        $env = [];
+
+        $home = getenv('HOME');
+        if (! is_string($home) || $home === '') {
+            $info = function_exists('posix_geteuid') ? posix_getpwuid(posix_geteuid()) : false;
+            $home = is_array($info) && isset($info['dir']) ? (string) $info['dir'] : '/var/www';
+        }
+        $env['HOME'] = $home;
+
+        if ($this->apiKey !== null && $this->apiKey !== '') {
+            $env['ANTHROPIC_API_KEY'] = $this->apiKey;
+        }
+
+        return $env;
     }
 
     /**
