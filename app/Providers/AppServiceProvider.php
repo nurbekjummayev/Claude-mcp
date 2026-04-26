@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
                 defaultModel: (string) $cfg['default_model'],
                 timeout: (int) $cfg['timeout'],
                 maxTurns: (int) $cfg['max_turns'],
+                phpCliBinary: (string) ($cfg['php_cli_binary'] ?? 'php'),
                 retryAttempts: (int) ($cfg['retry']['attempts'] ?? 3),
                 retryBackoffMs: (array) ($cfg['retry']['backoff_ms'] ?? [1000, 3000, 8000]),
             );

@@ -31,6 +31,7 @@ class ClaudeCodeService
         private readonly string $defaultModel,
         private readonly int $timeout,
         private readonly int $maxTurns,
+        private readonly string $phpCliBinary = 'php',
         private readonly int $retryAttempts = 3,
         private readonly array $retryBackoffMs = [1000, 3000, 8000],
     ) {}
@@ -273,12 +274,11 @@ class ClaudeCodeService
     private function writeMcpConfig(): string
     {
         $artisan = base_path('artisan');
-        $phpBinary = (string) (PHP_BINARY ?: 'php');
 
         $config = [
             'mcpServers' => [
                 'laravel' => [
-                    'command' => $phpBinary,
+                    'command' => $this->phpCliBinary,
                     'args' => [$artisan, 'mcp:start', 'claude'],
                 ],
             ],

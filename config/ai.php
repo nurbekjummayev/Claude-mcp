@@ -20,6 +20,15 @@ return [
             'attempts' => 3,
             'backoff_ms' => [1000, 3000, 8000],
         ],
+
+        /*
+        | PHP CLI binary used to spawn the local MCP stdio server
+        | (`php artisan mcp:start claude`). When the app runs under php-fpm,
+        | PHP_BINARY points at the FPM master, which cannot run CLI scripts.
+        | Override via PHP_CLI_BINARY in .env (e.g. /usr/bin/php8.4).
+        */
+        'php_cli_binary' => env('PHP_CLI_BINARY')
+            ?: (str_contains(PHP_BINARY, 'fpm') ? 'php' : PHP_BINARY),
     ],
 
     /*
