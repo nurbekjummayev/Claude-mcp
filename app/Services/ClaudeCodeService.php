@@ -144,13 +144,15 @@ class ClaudeCodeService
         ];
 
         if ($systemPrompt !== null && $systemPrompt !== '') {
-            $cmd[] = '--system';
+            $cmd[] = '--system-prompt';
             $cmd[] = $systemPrompt;
         }
 
         if ($mcpConfigPath !== null && $mcpConfigPath !== '') {
             $cmd[] = '--mcp-config';
             $cmd[] = $mcpConfigPath;
+            // Only honor the explicit config; ignore project-level .mcp.json.
+            $cmd[] = '--strict-mcp-config';
         }
 
         return $cmd;
